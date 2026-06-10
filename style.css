@@ -192,7 +192,7 @@ main{
     .nav-left,
     .nav-right{
         font-size: 15vb;
-        width:150%;
+        width:100%;
         justify-content:center;
     }
 }
