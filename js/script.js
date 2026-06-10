@@ -111,11 +111,12 @@ const images = [
 let currentImage = 0;
 
 bouquet.addEventListener("click", () => {
-    currentImage++;
+    bouquet.classList.add("fade");
 
-    if (currentImage >= images.length) {
-        currentImage = 0;
-    }
+    setTimeout(() => {
+        current = (current + 1) % images.length;
+        bouquet.src = images[current];
 
-    bouquet.src = images[currentImage];
+        bouquet.classList.remove("fade");
+    }, 400);
 });

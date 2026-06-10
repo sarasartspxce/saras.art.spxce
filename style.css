@@ -82,12 +82,8 @@ main{
     margin-top: 20vh;
     cursor: pointer;
     opacity: 1;
-    transition: opacity 0.4s ease;
 }
 
-.home.fade {
-    opacity: 0;
-}
 
 /* WORK GRID */
 
