@@ -85,6 +85,10 @@ main{
     transition: opacity 0.4s ease;
 }
 
+.home.fade {
+    opacity: 0;
+}
+
 /* WORK GRID */
 
 .work-grid{
