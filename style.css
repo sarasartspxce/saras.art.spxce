@@ -161,7 +161,7 @@ main{
     }
 
     .logo img{
-        width:90px;
+        width:60px;
     }
 
     .work-grid{
@@ -180,14 +180,15 @@ main{
         flex-direction: row;
         justify-content: space-between;
         align-items: flex-start;
-        padding: 25px 20px;
+        padding: 10px 15px;
     }
 
     .nav-left{
         justify-content: flex-start;
         width: auto;
-        gap: 15px;
+        gap: 10px;
         margin-top: 10px; /* 👈 nach unten schieben */
+        z-index: 2;
     }
 
     .nav-right{
@@ -197,19 +198,31 @@ main{
     }
 
     .nav-left a{
-        font-size: 20px; /* 👈 Text größer */
+        font-size: 15px; /* 👈 Text größer */
     }
 
     .social-icon{
-        width: 40px;  
-        height: 40px;
+        width: 30px;  
+        height: 30px;
     }
 
     .logo{
-        position: relative;
+        position: absolute;
         order: -1;
-        margin-bottom: 10px;
+        margin-bottom: 20px;
+        z-index: 1;
     }
+
+    .gallery img{
+    width:175px;
+    height: auto;
+    border-radius:10px;
+    }
+
+    .gallery{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(175px,1fr));
+    gap:20px;}
 }
 
 .lightbox{
