@@ -177,31 +177,38 @@ main{
 @media(max-width:700px){
 
     header{
-        flex-wrap:wrap;
-        justify-content:center;
-        gap:15px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 25px 20px;
     }
 
-    .logo{
-        position:relative;
-        left:auto;
-        transform:none;
-        order:-1;
+    .nav-left{
+        justify-content: flex-start;
+        width: auto;
+        gap: 15px;
+        margin-top: 10px; /* 👈 nach unten schieben */
     }
 
-    .nav-left,
     .nav-right{
-        width:100%;
-        margin-top: 15px;
-        justify-content:center;
+        justify-content: flex-end;
+        width: auto;
+        margin-top: 10px; /* 👈 nach unten schieben */
     }
-     .nav-left a{
-        font-size:25px;
+
+    .nav-left a{
+        font-size: 20px; /* 👈 Text größer */
     }
 
     .social-icon{
-        width:40px;
-        height:40px;
+        width: 40px;  
+        height: 40px;
+    }
+
+    .logo{
+        position: relative;
+        order: -1;
+        margin-bottom: 10px;
     }
 }
 
