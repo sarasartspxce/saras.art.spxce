@@ -191,9 +191,17 @@ main{
 
     .nav-left,
     .nav-right{
-        font-size: 15vb;
         width:100%;
+        margin-top: 15px;
         justify-content:center;
+    }
+     .nav-left a{
+        font-size:18px;
+    }
+
+    .social-icon{
+        width:30px;
+        height:30px;
     }
 }
 
