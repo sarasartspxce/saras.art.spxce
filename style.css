@@ -157,16 +157,16 @@ main{
 @media(max-width:900px){
 
     header{
-        padding:15px 20px;
+        padding:20px 25px;
     }
 
     .logo img{
-        width:90px;
+        width:60px;
     }
 
     .work-grid{
         grid-template-columns:repeat(2,1fr);
-        max-width:600px;
+        max-width:1000px;
     }
 
     .nav-left{
@@ -177,23 +177,52 @@ main{
 @media(max-width:700px){
 
     header{
-        flex-wrap:wrap;
-        justify-content:center;
-        gap:15px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 10px 15px;
+    }
+
+    .nav-left{
+        justify-content: flex-start;
+        width: auto;
+        gap: 10px;
+        margin-top: 10px; /* 👈 nach unten schieben */
+        z-index: 2;
+    }
+
+    .nav-right{
+        justify-content: flex-end;
+        width: auto;
+        margin-top: 10px; /* 👈 nach unten schieben */
+    }
+
+    .nav-left a{
+        font-size: 15px; /* 👈 Text größer */
+    }
+
+    .social-icon{
+        width: 30px;  
+        height: 30px;
     }
 
     .logo{
-        position:relative;
-        left:auto;
-        transform:none;
-        order:-1;
+        position: absolute;
+        order: -1;
+        margin-bottom: 20px;
+        z-index: 1;
     }
 
-    .nav-left,
-    .nav-right{
-        width:100%;
-        justify-content:center;
+    .gallery img{
+    width:175px;
+    height: auto;
+    border-radius:10px;
     }
+
+    .gallery{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(175px,1fr));
+    gap:20px;}
 }
 
 .lightbox{
