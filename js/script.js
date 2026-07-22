@@ -96,27 +96,192 @@ if(galleryImages.length){
 
 }
 
-const bouquet = document.getElementById("bouquet");
+// ==========================================
+// 3D NIKON OBJECT WITH PHYSICS (index.html)
+// ==========================================
 
-const images = [
-    "images/1.png",
-    "images/2.png",
-    "images/3.png",
-    "images/4.png",
-    "images/5.png",
-    "images/6.png",
-    "images/7.png"
-];
+if (window.location.pathname.endsWith("index.html") || window.location.pathname === "/" || window.location.pathname === "") {
+    
+    // 1. Szene, Kamera & Renderer initialisieren
+    const container = document.getElementById("canvas-container");
+    const scene = new THREE.Scene();
 
-let currentImage = 0;
+    const camera = new THREE.PerspectiveCamera(
+        45, 
+        window.innerWidth / window.innerHeight, 
+        0.1, 
+        1000
+    );
+    camera.position.set(0, 0, 10);
 
-bouquet.addEventListener("click", () => {
-    bouquet.classList.add("fade");
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
 
-    setTimeout(() => {
-        current = (current + 1) % images.length;
-        bouquet.src = images[current];
+    // Lichtquellen
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+    scene.add(ambientLight);
 
-        bouquet.classList.remove("fade");
-    }, 400);
-});
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
+
+    // 2. Physik-Welt (Cannon.js)
+    const world = new CANNON.World();
+    // Sanfte/leichte Gravitation für schwebendes Gefühl
+    world.gravity.set(0, -2.5, 0); 
+
+    // Unsichtbarer Boden, damit das Objekt nicht unendlich tief fällt
+    const groundBody = new CANNON.Body({
+        mass: 0,
+        shape: new CANNON.Plane()
+    });
+    groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+    groundBody.position.set(0, -3.5, 0);
+    world.addBody(groundBody);
+
+    // Variablen für Mesh & Body
+    let nikonMesh = null;
+    let nikonBody = null;
+
+    // 3. GLTF Modell laden
+    const loader = new THREE.GLTFLoader();
+    loader.load('models/nikon.glb', (gltf) => {
+        nikonMesh = gltf.scene;
+
+        // -------------------------------------------------------------
+        // 1. RESPONSIVE SKALIERUNG BERECHNEN
+        // -------------------------------------------------------------
+        // Wenn der Bildschirm schmaler als 700px ist (Handy),
+        // machen wir das Objekt etwas kleiner als auf dem PC (Desktop).
+        const isMobile = window.innerWidth < 700;
+        const baseScale = isMobile ? 2.5 : 4.0; // 👈 Vorher war es 1.5 (hier kannst du die Werte anpassen!)
+
+        nikonMesh.scale.set(baseScale, baseScale, baseScale);
+        scene.add(nikonMesh);
+
+        // -------------------------------------------------------------
+        // 2. PHYSIK-BOX AN NEUE GRÖSSE ANPASSEN
+        // -------------------------------------------------------------
+        const box = new THREE.Box3().setFromObject(nikonMesh);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+
+        // Die Kollisionsbox muss genau die Hälfte der gemessenen Größe haben
+        const shape = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
+        nikonBody = new CANNON.Body({
+            mass: 1,
+            shape: shape,
+            position: new CANNON.Vec3(0, 4, 0),
+            angularDamping: 0.4,
+            linearDamping: 0.3
+        });
+
+        nikonBody.angularVelocity.set(
+            (Math.random() - 0.5) * 2,
+            (Math.random() - 0.5) * 2,
+            (Math.random() - 0.5) * 2
+        );
+
+        world.addBody(nikonBody);
+    }, undefined, (error) => {
+        console.error("Fehler beim Laden des 3D-Modells:", error);
+    });
+
+    // 4. Interaktion: Drag & Drop (Maus & Touch)
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    let isDragging = false;
+    let dragPlane = new THREE.Plane();
+    let planeIntersect = new THREE.Vector3();
+
+    function getPointerPos(e) {
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+            x: (x / window.innerWidth) * 2 - 1,
+            y: -(y / window.innerHeight) * 2 + 1
+        };
+    }
+
+    function onPointerDown(e) {
+        if (!nikonMesh || !nikonBody) return;
+
+        const pos = getPointerPos(e);
+        mouse.x = pos.x;
+        mouse.y = pos.y;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObject(nikonMesh, true);
+
+        if (intersects.length > 0) {
+            isDragging = true;
+            // Ebene parallel zur Kamera für flüssiges Ziehen erstellen
+            dragPlane.setFromNormalAndCoplanarPoint(
+                camera.getWorldDirection(new THREE.Vector3()).negate(),
+                nikonMesh.position
+            );
+        }
+    }
+
+    function onPointerMove(e) {
+        if (!isDragging || !nikonBody) return;
+
+        const pos = getPointerPos(e);
+        mouse.x = pos.x;
+        mouse.y = pos.y;
+
+        raycaster.setFromCamera(mouse, camera);
+        if (raycaster.ray.intersectPlane(dragPlane, planeIntersect)) {
+            // Position sanft zur Maus/Finger-Position bewegen
+            nikonBody.position.copy(planeIntersect);
+            nikonBody.velocity.set(0, 0, 0); // Stoppt schnelles Wegfliegen
+            
+            // Leichte Rotation beim Bewegen erzeugen
+            nikonBody.angularVelocity.set(0.5, 0.5, 0);
+        }
+    }
+
+    function onPointerUp() {
+        if (isDragging && nikonBody) {
+            isDragging = false;
+            // Nach dem Loslassen wieder leicht fallen lassen
+            nikonBody.velocity.set(0, -1, 0);
+        }
+    }
+
+    // Event-Listener für Desktop & Mobile
+    window.addEventListener("mousedown", onPointerDown);
+    window.addEventListener("mousemove", onPointerMove);
+    window.addEventListener("mouseup", onPointerUp);
+
+    window.addEventListener("touchstart", onPointerDown, { passive: true });
+    window.addEventListener("touchmove", onPointerMove, { passive: true });
+    window.addEventListener("touchend", onPointerUp);
+
+    // 5. Responsive Anpassung bei Resize
+    window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // 6. Animation Loop
+    const timeStep = 1 / 60;
+    function animate() {
+        requestAnimationFrame(animate);
+
+        world.step(timeStep);
+
+        // Synchronisiere 3D-Modell mit der Physik-Schildkröte
+        if (nikonMesh && nikonBody) {
+            nikonMesh.position.copy(nikonBody.position);
+            nikonMesh.quaternion.copy(nikonBody.quaternion);
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    animate();
+}
