@@ -212,8 +212,8 @@ if (isHomePage && container) {
     // -------------------------------------------------------------
     const itemsToLoad = [
         { file: 'models/nikon.glb',      scaleD: 3.0, scaleM: 2.2, startX: -2.6, rotateY: 0 },
-        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.9, startX: -0.7, rotateY: 0 },
-        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.9, startX: 0.7,  rotateY: Math.PI },
+        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.9, startX: -0.5, rotateY: 0 },
+        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.9, startX: 0.5,  rotateY: Math.PI },
         { file: 'models/sketchbook.glb', scaleD: 3.8, scaleM: 2.4, startX: 2.6, rotateY: Math.PI }
     ];
 
