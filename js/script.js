@@ -97,7 +97,7 @@ if(galleryImages.length){
 }
 
 // ==========================================
-// 3D MULTI-OBJECT FLOATING PHYSICS (index.html)
+// 3D MULTI-OBJECT FLOATING PHYSICS (RESPONSIVE)
 // ==========================================
 
 const currentPath = window.location.pathname;
@@ -132,53 +132,55 @@ if (isHomePage && container) {
     dirLight.position.set(5, 10, 7);
     scene.add(dirLight);
 
-    // 2. Physik-Welt (Keine Gravitation für Schwebe-Gefühl)
+    // 2. Physik-Welt (Schwerelosigkeit)
     const world = new CANNON.World();
-    world.gravity.set(0, 0, 0); // Schwerelosigkeit
+    world.gravity.set(0, 0, 0); 
 
-    // Material mit fast NULL Restitution (Absolut kein Bouncen/Federn)
     const smoothMaterial = new CANNON.Material("smoothMaterial");
     const contactMaterial = new CANNON.ContactMaterial(
         smoothMaterial,
         smoothMaterial,
         {
-            friction: 0.2,     // Leichtes Vorbeigleiten
-            restitution: 0.01  // 👈 Fast 0: Verhindert Zurückfedern am Rand & bei Objekten
+            friction: 0.2,
+            restitution: 0.01 // Verhindert Bouncen/Zurückfedern
         }
     );
     world.addContactMaterial(contactMaterial);
 
     // -------------------------------------------------------------
-    // BILDSCHIRMGRENZEN (Mit Abstand für die Navbar oben)
+    // BILDSCHIRMGRENZEN (Dynamic for Mobile & Desktop)
     // -------------------------------------------------------------
-    // Höhe deiner Navigation in Pixeln (passe die 90px an deine Navbar an!)
-    const NAVBAR_HEIGHT_PX = 90; 
-
-    // Wir merken uns die Obergrenze weltweit für die Drag-Funktion
-    let topLimitY = 0; 
+    let wallBodies = [];
+    let topLimitY = 0;
 
     const createBounds = () => {
+        // Alte Wände löschen bei Resizing
+        wallBodies.forEach(wall => world.removeBody(wall));
+        wallBodies = [];
+
+        const isMobileScreen = window.innerWidth < 700;
+        
+        // Navbar-Höhe anpassen: Auf dem Handy etwas mehr Platz einräumen
+        const navbarHeightPx = isMobileScreen ? 110 : 90;
+
         const vFOV = THREE.MathUtils.degToRad(camera.fov);
         const height = 2 * Math.tan(vFOV / 2) * camera.position.z;
         const width = height * camera.aspect;
 
-        const boundMargin = 0.4;
-        const w = width / 2 + boundMargin;
-        const h = height / 2 + boundMargin;
+        const boundMargin = 0.2;
+        const w = (width / 2) + boundMargin;
+        const h = (height / 2) + boundMargin;
 
-        // Umrechnung der Navbar-Höhe in Drei.js / Cannon.js 3D-Einheiten
-        const navbarIn3DUnits = (NAVBAR_HEIGHT_PX / window.innerHeight) * height;
-        
-        // Die neue Obergrenze ist der obere Rand minus die Navbar-Höhe
+        const navbarIn3DUnits = (navbarHeightPx / window.innerHeight) * height;
         topLimitY = h - navbarIn3DUnits;
 
         const planeShape = new CANNON.Plane();
         
         const walls = [
-            { pos: [0, -h, 0],         rot: [-Math.PI / 2, 0, 0] }, // Unten
-            { pos: [0, topLimitY, 0],  rot: [Math.PI / 2, 0, 0] },  // Oben (stoppt UNTER der Navbar!)
-            { pos: [-w, 0, 0],         rot: [0, Math.PI / 2, 0] },  // Links
-            { pos: [w, 0, 0],          rot: [0, -Math.PI / 2, 0] }   // Rechts
+            { pos: [0, -h, 0],        rot: [-Math.PI / 2, 0, 0] }, // Unten
+            { pos: [0, topLimitY, 0], rot: [Math.PI / 2, 0, 0] },  // Oben (Unter der Navbar)
+            { pos: [-w, 0, 0],        rot: [0, Math.PI / 2, 0] },  // Links
+            { pos: [w, 0, 0],         rot: [0, -Math.PI / 2, 0] }   // Rechts
         ];
 
         walls.forEach(wSpec => {
@@ -187,21 +189,22 @@ if (isHomePage && container) {
             wallBody.position.set(...wSpec.pos);
             wallBody.quaternion.setFromEuler(...wSpec.rot);
             world.addBody(wallBody);
+            wallBodies.push(wallBody);
         });
     };
     createBounds();
 
     // -------------------------------------------------------------
-    // 3. OBJEKTE SAUBER NEBENEINANDER PLATZIEREN
+    // 3. OBJEKTE DEFINIEREN & RESPONSIVE PLATZIEREN
     // -------------------------------------------------------------
     const isMobile = window.innerWidth < 700;
 
-    // Objekte definiert mit angepasster Größe (scaleD / scaleM) & optionaler Drehung
+    // Stark optimierte Mobile-Skalierungen (scaleM) damit die Objekte auf kleinen Screens passen
     const itemsToLoad = [
-        { file: 'models/nikon.glb',      scaleD: 3.0, scaleM: 1.8, startX: -2.6, rotateY: 0 },
-        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.8, startX: -0.5, rotateY: 0 },
-        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.8, startX: 0.5,  rotateY: Math.PI },
-        { file: 'models/sketchbook.glb', scaleD: 3.8, scaleM: 2.3, startX: 2.6, rotateY: Math.PI }
+        { file: 'models/nikon.glb',      scaleD: 3.0, scaleM: 1.2, startX: -2.6, rotateY: 0 },
+        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.2, startX: -0.8, rotateY: 0 },
+        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.2, startX: 0.8,  rotateY: Math.PI },
+        { file: 'models/sketchbook.glb', scaleD: 3.8, scaleM: 1.5, startX: 2.6, rotateY: Math.PI }
     ];
 
     const interactiveObjects = [];
@@ -211,27 +214,23 @@ if (isHomePage && container) {
         loader.load(item.file, (gltf) => {
             const mesh = gltf.scene;
 
-            // 1. Größe anpassen
             const scale = isMobile ? item.scaleM : item.scaleD;
             mesh.scale.set(scale, scale, scale);
 
-            // 2. Start-Rotation anwenden (z. B. 180° Drehung für das 2. Feuerzeug)
             if (item.rotateY) {
                 mesh.rotation.y = item.rotateY;
             }
 
             scene.add(mesh);
 
-            // Bounding Box für physikalischen Rahmen
             const box = new THREE.Box3().setFromObject(mesh);
             const size = new THREE.Vector3();
             box.getSize(size);
 
-            // Physik-Shape basierend auf der neuen Größe berechnen
             const shape = new CANNON.Box(new CANNON.Vec3(size.x / 2.1, size.y / 2.1, size.z / 2.1));
 
-            // Auf Handy etwas enger zusammenrücken
-            const posX = isMobile ? item.startX * 0.45 : item.startX;
+            // Auf Handys rücken die Objekte eng zusammen (Faktor 0.35 statt 0.45)
+            const posX = isMobile ? item.startX * 0.35 : item.startX;
 
             const body = new CANNON.Body({
                 mass: 1,
@@ -242,13 +241,11 @@ if (isHomePage && container) {
                 linearDamping: 0.75
             });
 
-            // Die optische Drehung auch an die Physik übertragen
             body.quaternion.copy(mesh.quaternion);
 
-            // Minimale Bewegung zum Start für ein sanftes Schweben
             body.velocity.set(
-                (Math.random() - 0.5) * 0.1,
-                (Math.random() - 0.5) * 0.1,
+                (Math.random() - 0.5) * 0.05,
+                (Math.random() - 0.5) * 0.05,
                 0
             );
 
@@ -260,7 +257,7 @@ if (isHomePage && container) {
         });
     });
 
-    // 4. Drag & Drop Interaktion
+    // 4. Drag & Drop Interaktion (Touch & Mouse)
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let isDragging = false;
@@ -319,20 +316,20 @@ if (isHomePage && container) {
 
         raycaster.setFromCamera(mouse, camera);
         if (raycaster.ray.intersectPlane(dragPlane, planeIntersect)) {
-            // Begrenze Y, damit die Maus das Objekt nicht über die Navbar ziehen kann
-            // Der Wert 0.6 ist ein kleiner Puffer für den halben Objekt-Körper
-            const targetY = Math.min(planeIntersect.y, topLimitY - 0.4);
+            // Puffer für die Höhe des gewählten Objekts
+            const objectPadding = isMobile ? 0.4 : 0.6;
+            const targetY = Math.min(planeIntersect.y, topLimitY - objectPadding);
 
             selectedItem.body.position.set(planeIntersect.x, targetY, planeIntersect.z);
             selectedItem.body.velocity.set(0, 0, 0); 
-            selectedItem.body.angularVelocity.set(0.3, 0.3, 0); 
+            selectedItem.body.angularVelocity.set(0.2, 0.2, 0); 
         }
     }
 
     function onPointerUp() {
         if (isDragging && selectedItem) {
             isDragging = false;
-            selectedItem.body.velocity.set(0, 0, 0); // Stoppt sofort sanft beim Loslassen
+            selectedItem.body.velocity.set(0, 0, 0);
             selectedItem = null;
         }
     }
@@ -345,11 +342,12 @@ if (isHomePage && container) {
     window.addEventListener("touchmove", onPointerMove, { passive: false });
     window.addEventListener("touchend", onPointerUp);
 
-    // 5. Resize Event
+    // 5. Resize Event (Berechnet Wände & Kamera neu)
     window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+        createBounds(); // Wände neu ausrichten
     });
 
     // 6. Animation Loop
@@ -360,7 +358,7 @@ if (isHomePage && container) {
         world.step(timeStep);
 
         interactiveObjects.forEach(obj => {
-            // Verhindert, dass Objekte in die Tiefe (Z-Achse) wegwandern
+            // Verhindert Abdrift nach hinten/vorne
             obj.body.position.z *= 0.8;
 
             obj.mesh.position.copy(obj.body.position);
