@@ -219,6 +219,11 @@ if (isHomePage && container) {
 
         if (intersects.length > 0) {
             isDragging = true;
+
+            if (e.cancelable) {
+                e.preventDefault();
+            }
+
             dragPlane.setFromNormalAndCoplanarPoint(
                 camera.getWorldDirection(new THREE.Vector3()).negate(),
                 nikonMesh.position
@@ -228,6 +233,10 @@ if (isHomePage && container) {
 
     function onPointerMove(e) {
         if (!isDragging || !nikonBody) return;
+
+        if (e.cancelable) {
+            e.preventDefault();
+        }
 
         const pos = getPointerPos(e);
         mouse.x = pos.x;
@@ -253,8 +262,8 @@ if (isHomePage && container) {
     window.addEventListener("mousemove", onPointerMove);
     window.addEventListener("mouseup", onPointerUp);
 
-    window.addEventListener("touchstart", onPointerDown, { passive: true });
-    window.addEventListener("touchmove", onPointerMove, { passive: true });
+    window.addEventListener("touchstart", onPointerDown, { passive: false });
+    window.addEventListener("touchmove", onPointerMove, { passive: false });
     window.addEventListener("touchend", onPointerUp);
 
     // 5. Responsive Anpassung bei Resize

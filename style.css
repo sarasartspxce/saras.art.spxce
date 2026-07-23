@@ -302,6 +302,7 @@ main{
     height: 100vh;
     z-index: 1; /* Über dem Hintergrund, aber unter Lightbox/Header falls nötig */
     pointer-events: auto;
+    touch-action: none;
 }
 
 
