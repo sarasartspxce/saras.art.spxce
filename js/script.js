@@ -209,10 +209,10 @@ if (isHomePage && container) {
     // 3. OBJEKTE PLATZIEREN
     // -------------------------------------------------------------
     const itemsToLoad = [
-        { file: 'models/nikon.glb',      scaleD: 3.0, scaleM: 1.1, startX: -2.6, rotateY: 0 },
-        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.1, startX: -0.5, rotateY: 0 },
-        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.1, startX: 0.5,  rotateY: Math.PI },
-        { file: 'models/sketchbook.glb', scaleD: 3.8, scaleM: 1.4, startX: 2.6, rotateY: Math.PI }
+        { file: 'models/nikon.glb',      scaleD: 3.0, scaleM: 2.4, startX: -2.6, rotateY: 0 },
+        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 2.1, startX: -0.5, rotateY: 0 },
+        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 2.1, startX: 0.5,  rotateY: Math.PI },
+        { file: 'models/sketchbook.glb', scaleD: 3.8, scaleM: 2.6, startX: 2.6, rotateY: Math.PI }
     ];
 
     const interactiveObjects = [];
