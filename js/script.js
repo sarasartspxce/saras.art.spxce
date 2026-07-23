@@ -100,10 +100,16 @@ if(galleryImages.length){
 // 3D NIKON OBJECT WITH PHYSICS (index.html)
 // ==========================================
 
-if (window.location.pathname.endsWith("index.html") || window.location.pathname === "/" || window.location.pathname === "") {
+// Erkennung der Startseite (funktioniert auch direkt über die Haupt-URL / GitHub Pages)
+const currentPath = window.location.pathname;
+const currentFileName = currentPath.split("/").pop();
+const isHomePage = currentFileName === "index.html" || currentFileName === "" || currentPath.endsWith("/");
+
+const container = document.getElementById("canvas-container");
+
+if (isHomePage && container) {
     
     // 1. Szene, Kamera & Renderer initialisieren
-    const container = document.getElementById("canvas-container");
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(
@@ -129,8 +135,7 @@ if (window.location.pathname.endsWith("index.html") || window.location.pathname 
 
     // 2. Physik-Welt (Cannon.js)
     const world = new CANNON.World();
-    // Sanfte/leichte Gravitation für schwebendes Gefühl
-    world.gravity.set(0, -2.5, 0); 
+    world.gravity.set(0, -2.5, 0); // Sanfte/leichte Gravitation für schwebendes Gefühl
 
     // Unsichtbarer Boden, damit das Objekt nicht unendlich tief fällt
     const groundBody = new CANNON.Body({
@@ -153,10 +158,8 @@ if (window.location.pathname.endsWith("index.html") || window.location.pathname 
         // -------------------------------------------------------------
         // 1. RESPONSIVE SKALIERUNG BERECHNEN
         // -------------------------------------------------------------
-        // Wenn der Bildschirm schmaler als 700px ist (Handy),
-        // machen wir das Objekt etwas kleiner als auf dem PC (Desktop).
         const isMobile = window.innerWidth < 700;
-        const baseScale = isMobile ? 2.5 : 4.0; // 👈 Vorher war es 1.5 (hier kannst du die Werte anpassen!)
+        const baseScale = isMobile ? 2.5 : 4.0;
 
         nikonMesh.scale.set(baseScale, baseScale, baseScale);
         scene.add(nikonMesh);
@@ -168,7 +171,6 @@ if (window.location.pathname.endsWith("index.html") || window.location.pathname 
         const size = new THREE.Vector3();
         box.getSize(size);
 
-        // Die Kollisionsbox muss genau die Hälfte der gemessenen Größe haben
         const shape = new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2));
         nikonBody = new CANNON.Body({
             mass: 1,
@@ -217,7 +219,6 @@ if (window.location.pathname.endsWith("index.html") || window.location.pathname 
 
         if (intersects.length > 0) {
             isDragging = true;
-            // Ebene parallel zur Kamera für flüssiges Ziehen erstellen
             dragPlane.setFromNormalAndCoplanarPoint(
                 camera.getWorldDirection(new THREE.Vector3()).negate(),
                 nikonMesh.position
@@ -234,11 +235,8 @@ if (window.location.pathname.endsWith("index.html") || window.location.pathname 
 
         raycaster.setFromCamera(mouse, camera);
         if (raycaster.ray.intersectPlane(dragPlane, planeIntersect)) {
-            // Position sanft zur Maus/Finger-Position bewegen
             nikonBody.position.copy(planeIntersect);
-            nikonBody.velocity.set(0, 0, 0); // Stoppt schnelles Wegfliegen
-            
-            // Leichte Rotation beim Bewegen erzeugen
+            nikonBody.velocity.set(0, 0, 0);
             nikonBody.angularVelocity.set(0.5, 0.5, 0);
         }
     }
@@ -246,7 +244,6 @@ if (window.location.pathname.endsWith("index.html") || window.location.pathname 
     function onPointerUp() {
         if (isDragging && nikonBody) {
             isDragging = false;
-            // Nach dem Loslassen wieder leicht fallen lassen
             nikonBody.velocity.set(0, -1, 0);
         }
     }
@@ -274,7 +271,6 @@ if (window.location.pathname.endsWith("index.html") || window.location.pathname 
 
         world.step(timeStep);
 
-        // Synchronisiere 3D-Modell mit der Physik-Schildkröte
         if (nikonMesh && nikonBody) {
             nikonMesh.position.copy(nikonBody.position);
             nikonMesh.quaternion.copy(nikonBody.quaternion);
