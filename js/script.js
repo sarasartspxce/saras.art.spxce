@@ -97,7 +97,7 @@ if(galleryImages.length){
 }
 
 // ==========================================
-// 3D MULTI-OBJECT FLOATING PHYSICS (RESPONSIVE)
+// 3D MULTI-OBJECT FLOATING PHYSICS (STABLE & MOBILE SAFE)
 // ==========================================
 
 const currentPath = window.location.pathname;
@@ -108,6 +108,8 @@ const container = document.getElementById("canvas-container");
 
 if (isHomePage && container) {
 
+    const isMobile = window.innerWidth < 700;
+
     // 1. Szene, Kamera & Renderer
     const scene = new THREE.Scene();
 
@@ -115,53 +117,62 @@ if (isHomePage && container) {
         45, 
         window.innerWidth / window.innerHeight, 
         0.1, 
-        1000
+        100
     );
     camera.position.set(0, 0, 10);
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    // SPEICHER-OPTIMIERUNG OHNE TEXTUR-SCHÄDEN:
+    const renderer = new THREE.WebGLRenderer({ 
+        alpha: true, 
+        antialias: !isMobile, 
+        powerPreference: "high-performance"
+    });
+    
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Auf Mobile begrenzen wir die PixelRatio strikt auf 1.0 (verhindert RAM-Abstürze auf iOS/Android!)
+    renderer.setPixelRatio(isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.5));
     container.appendChild(renderer.domElement);
 
-    // Lichtquellen
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
+    // Lichtquellen (Gute Ausleuchtung von allen Seiten, damit nichts schwarz wirkt)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.6);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    dirLight.position.set(5, 10, 7);
-    scene.add(dirLight);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 1.2);
+    dirLight1.position.set(5, 10, 7);
+    scene.add(dirLight1);
 
-    // 2. Physik-Welt (Schwerelosigkeit)
+    const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight2.position.set(-5, -5, -5);
+    scene.add(dirLight2);
+
+    // 2. Physik-Welt
     const world = new CANNON.World();
     world.gravity.set(0, 0, 0); 
+    
+    world.solver.iterations = isMobile ? 5 : 10; 
 
     const smoothMaterial = new CANNON.Material("smoothMaterial");
     const contactMaterial = new CANNON.ContactMaterial(
         smoothMaterial,
         smoothMaterial,
         {
-            friction: 0.2,
-            restitution: 0.01 // Verhindert Bouncen/Zurückfedern
+            friction: 0.1,
+            restitution: 0.01
         }
     );
     world.addContactMaterial(contactMaterial);
 
     // -------------------------------------------------------------
-    // BILDSCHIRMGRENZEN (Dynamic for Mobile & Desktop)
+    // BILDSCHIRMGRENZEN (Mit Navbar-Schutz oben)
     // -------------------------------------------------------------
     let wallBodies = [];
     let topLimitY = 0;
 
     const createBounds = () => {
-        // Alte Wände löschen bei Resizing
         wallBodies.forEach(wall => world.removeBody(wall));
         wallBodies = [];
 
-        const isMobileScreen = window.innerWidth < 700;
-        
-        // Navbar-Höhe anpassen: Auf dem Handy etwas mehr Platz einräumen
-        const navbarHeightPx = isMobileScreen ? 110 : 90;
+        const navbarHeightPx = isMobile ? 100 : 90;
 
         const vFOV = THREE.MathUtils.degToRad(camera.fov);
         const height = 2 * Math.tan(vFOV / 2) * camera.position.z;
@@ -195,16 +206,13 @@ if (isHomePage && container) {
     createBounds();
 
     // -------------------------------------------------------------
-    // 3. OBJEKTE DEFINIEREN & RESPONSIVE PLATZIEREN
+    // 3. OBJEKTE PLATZIEREN
     // -------------------------------------------------------------
-    const isMobile = window.innerWidth < 700;
-
-    // Stark optimierte Mobile-Skalierungen (scaleM) damit die Objekte auf kleinen Screens passen
     const itemsToLoad = [
-        { file: 'models/nikon.glb',      scaleD: 3.0, scaleM: 1.2, startX: -2.6, rotateY: 0 },
-        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.2, startX: -0.5, rotateY: 0 },
-        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.2, startX: 0.5,  rotateY: Math.PI },
-        { file: 'models/sketchbook.glb', scaleD: 3.8, scaleM: 1.5, startX: 2.6, rotateY: Math.PI }
+        { file: 'models/nikon.glb',      scaleD: 3.0, scaleM: 1.1, startX: -2.6, rotateY: 0 },
+        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.1, startX: -0.8, rotateY: 0 },
+        { file: 'models/feuerzeug.glb',  scaleD: 3.0, scaleM: 1.1, startX: 0.8,  rotateY: Math.PI },
+        { file: 'models/sketchbook.glb', scaleD: 3.8, scaleM: 1.4, startX: 2.6, rotateY: Math.PI }
     ];
 
     const interactiveObjects = [];
@@ -227,9 +235,9 @@ if (isHomePage && container) {
             const size = new THREE.Vector3();
             box.getSize(size);
 
+            // Vereinfachte Kollisionsbox für Handys spart viel CPU
             const shape = new CANNON.Box(new CANNON.Vec3(size.x / 2.1, size.y / 2.1, size.z / 2.1));
 
-            // Auf Handys rücken die Objekte eng zusammen (Faktor 0.35 statt 0.45)
             const posX = isMobile ? item.startX * 0.35 : item.startX;
 
             const body = new CANNON.Body({
@@ -243,12 +251,6 @@ if (isHomePage && container) {
 
             body.quaternion.copy(mesh.quaternion);
 
-            body.velocity.set(
-                (Math.random() - 0.5) * 0.05,
-                (Math.random() - 0.5) * 0.05,
-                0
-            );
-
             world.addBody(body);
             interactiveObjects.push({ mesh, body });
 
@@ -257,7 +259,7 @@ if (isHomePage && container) {
         });
     });
 
-    // 4. Drag & Drop Interaktion (Touch & Mouse)
+    // 4. Drag & Drop Interaktion
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
     let isDragging = false;
@@ -316,13 +318,12 @@ if (isHomePage && container) {
 
         raycaster.setFromCamera(mouse, camera);
         if (raycaster.ray.intersectPlane(dragPlane, planeIntersect)) {
-            // Puffer für die Höhe des gewählten Objekts
             const objectPadding = isMobile ? 0.4 : 0.6;
             const targetY = Math.min(planeIntersect.y, topLimitY - objectPadding);
 
             selectedItem.body.position.set(planeIntersect.x, targetY, planeIntersect.z);
             selectedItem.body.velocity.set(0, 0, 0); 
-            selectedItem.body.angularVelocity.set(0.2, 0.2, 0); 
+            selectedItem.body.angularVelocity.set(0.1, 0.1, 0); 
         }
     }
 
@@ -342,12 +343,12 @@ if (isHomePage && container) {
     window.addEventListener("touchmove", onPointerMove, { passive: false });
     window.addEventListener("touchend", onPointerUp);
 
-    // 5. Resize Event (Berechnet Wände & Kamera neu)
+    // 5. Resize Event
     window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-        createBounds(); // Wände neu ausrichten
+        createBounds();
     });
 
     // 6. Animation Loop
@@ -358,9 +359,7 @@ if (isHomePage && container) {
         world.step(timeStep);
 
         interactiveObjects.forEach(obj => {
-            // Verhindert Abdrift nach hinten/vorne
             obj.body.position.z *= 0.8;
-
             obj.mesh.position.copy(obj.body.position);
             obj.mesh.quaternion.copy(obj.body.quaternion);
         });
