@@ -294,16 +294,6 @@ main{
     cursor:pointer;
 }
 
-#canvas-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 1; /* Über dem Hintergrund, aber unter Lightbox/Header falls nötig */
-    pointer-events: auto;
-    touch-action: none;
-}
 
 
 @media(max-width:768px){
